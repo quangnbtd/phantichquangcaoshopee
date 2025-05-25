@@ -3,29 +3,34 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Shopee Ads Analytics Dashboard</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.min.js"></script>
+    <title>Shopee Ads Analytics Dashboard - Final Version</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <style>
+        /* CSS giữ nguyên như phiên bản trước, không có thay đổi ở đây */
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
-        
+
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             color: #333;
+            font-size: 16px;
+            line-height: 1.6;
         }
-        
+
         .container {
             max-width: 1400px;
-            margin: 0 auto;
+            margin: 20px auto;
             padding: 20px;
+            background-color: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
         }
-        
+
         .header {
             text-align: center;
             margin-bottom: 30px;
@@ -35,13 +40,16 @@
             padding: 30px;
             color: white;
         }
-        
+
         .header h1 {
-            font-size: 2.5em;
+            font-size: 2.2em;
             margin-bottom: 10px;
             text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
         }
-        
+         .header p {
+            font-size: 1.1em;
+        }
+
         .upload-section {
             background: white;
             border-radius: 15px;
@@ -50,8 +58,8 @@
             box-shadow: 0 15px 35px rgba(0,0,0,0.1);
             text-align: center;
         }
-        
-        .file-upload {
+
+        .file-upload-area {
             border: 3px dashed #667eea;
             border-radius: 15px;
             padding: 40px;
@@ -59,175 +67,106 @@
             transition: all 0.3s ease;
             cursor: pointer;
         }
-        
-        .file-upload:hover {
+
+        .file-upload-area.dragover {
             border-color: #764ba2;
-            background: #f0f2ff;
-            transform: translateY(-2px);
+            background: #e0e3ff;
         }
-        
-        .file-upload input {
+
+        .file-upload-area input[type="file"] {
             display: none;
         }
-        
+
         .upload-icon {
             font-size: 3em;
             color: #667eea;
             margin-bottom: 15px;
         }
-        
-        .btn {
-            background: linear-gradient(45deg, #667eea, #764ba2);
-            color: white;
-            border: none;
-            padding: 12px 30px;
-            border-radius: 25px;
-            cursor: pointer;
-            font-size: 16px;
-            transition: all 0.3s ease;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-        }
-        
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
-        }
-        
-        .results {
-            display: none;
-        }
-        
+        .upload-section h3 { margin-bottom: 5px; font-size: 1.4em; }
+        .upload-section p { color: #555; }
+
+
+        .results { display: none; }
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
             gap: 20px;
             margin-bottom: 30px;
         }
-        
         .stat-card {
-            background: white;
-            padding: 25px;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-            text-align: center;
+            background: white; padding: 20px; border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08); text-align: center;
             transition: transform 0.3s ease;
         }
-        
-        .stat-card:hover {
-            transform: translateY(-5px);
-        }
-        
+        .stat-card:hover { transform: translateY(-5px); }
         .stat-value {
-            font-size: 2.5em;
-            font-weight: bold;
-            margin-bottom: 10px;
+            font-size: 2em; font-weight: bold; margin-bottom: 8px;
             background: linear-gradient(45deg, #667eea, #764ba2);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            background-clip: text; word-wrap: break-word;
         }
-        
-        .stat-label {
-            color: #666;
-            font-size: 1.1em;
-        }
-        
+        .stat-label { color: #666; font-size: 1em; }
+
         .charts-section {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 30px;
-            margin-bottom: 30px;
+            display: grid; grid-template-columns: 1fr 1fr;
+            gap: 30px; margin-bottom: 30px;
         }
-        
         .chart-card {
-            background: white;
-            padding: 25px;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            background: white; padding: 25px; border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08); position: relative;
+            min-height: 350px; 
         }
-        
+        .chart-message {
+            position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%, -50%); text-align: center;
+            color: #888; font-style: italic;
+        }
         .chart-title {
-            font-size: 1.3em;
-            margin-bottom: 20px;
-            color: #333;
-            text-align: center;
+            font-size: 1.2em; margin-bottom: 20px; color: #333; text-align: center;
         }
-        
+
         .table-section {
-            background: white;
-            border-radius: 15px;
-            padding: 25px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-            overflow-x: auto;
+            background: white; border-radius: 15px; padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08); overflow-x: auto;
         }
-        
-        .data-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 14px;
+        .data-table { width: 100%; border-collapse: collapse; font-size: 0.9em; }
+        .data-table th, .data-table td {
+            padding: 10px 8px; text-align: left; border-bottom: 1px solid #eee;
         }
-        
-        .data-table th,
-        .data-table td {
-            padding: 12px 8px;
-            text-align: left;
-            border-bottom: 1px solid #eee;
-        }
-        
         .data-table th {
-            background: linear-gradient(45deg, #667eea, #764ba2);
-            color: white;
-            font-weight: 600;
-            position: sticky;
-            top: 0;
+            background: linear-gradient(45deg, #667eea, #764ba2); color: white;
+            font-weight: 600; position: sticky; top: 0;
         }
-        
-        .data-table tr:hover {
-            background: #f8f9ff;
-        }
-        
+        .data-table tr:hover { background: #f8f9ff; }
+
         .recommendations {
-            background: white;
-            border-radius: 15px;
-            padding: 25px;
-            margin-top: 30px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            background: white; border-radius: 15px; padding: 25px;
+            margin-top: 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.08);
         }
-        
         .recommendation-item {
-            background: #f8f9ff;
-            padding: 15px;
-            border-radius: 10px;
-            margin-bottom: 15px;
-            border-left: 4px solid #667eea;
+            background: #f8f9ff; padding: 15px; border-radius: 10px;
+            margin-bottom: 15px; border-left: 4px solid #667eea;
         }
-        
+         .recommendation-item h4 { margin-bottom: 5px; font-size: 1.1em;}
+
         .loading {
-            display: none;
-            text-align: center;
-            padding: 40px;
-            color: white;
+            display: none; text-align: center; padding: 40px; color: white;
         }
-        
         .spinner {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #667eea;
-            border-radius: 50%;
-            width: 50px;
-            height: 50px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 20px;
+            border: 4px solid #f3f3f3; border-top: 4px solid #667eea;
+            border-radius: 50%; width: 50px; height: 50px;
+            animation: spin 1s linear infinite; margin: 0 auto 20px;
         }
-        
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        @media (max-width: 992px) {
+            .charts-section { grid-template-columns: 1fr; }
         }
-        
         @media (max-width: 768px) {
-            .charts-section {
-                grid-template-columns: 1fr;
-            }
+            .header h1 { font-size: 1.8em; }
+            .stat-value { font-size: 1.8em; }
+            .stat-label { font-size: 0.9em; }
+            .container { margin: 10px; padding: 15px; }
         }
     </style>
 </head>
@@ -237,317 +176,464 @@
             <h1>📊 Shopee Ads Analytics Dashboard</h1>
             <p>Phân tích dữ liệu quảng cáo Shopee một cách thông minh và trực quan</p>
         </div>
-        
+
         <div class="upload-section">
-            <div class="file-upload" onclick="document.getElementById('fileInput').click()">
+            <div class="file-upload-area" id="fileUploadAreaContainer">
+                <input type="file" id="csvFileInput" accept=".csv" style="display: none;">
                 <div class="upload-icon">📁</div>
                 <h3>Tải lên file CSV dữ liệu quảng cáo Shopee</h3>
                 <p>Chọn file hoặc kéo thả file vào đây</p>
-                <input type="file" id="fileInput" accept=".csv" onchange="handleFileUpload(event)">
             </div>
+            <p id="fileNameDisplayElement" style="margin-top: 10px; color: #555; min-height: 1.2em;"></p>
         </div>
-        
-        <div class="loading" id="loading">
+
+        <div class="loading" id="loadingSpinnerElement">
             <div class="spinner"></div>
             <p>Đang phân tích dữ liệu...</p>
         </div>
-        
-        <div class="results" id="results">
-            <div class="stats-grid" id="statsGrid">
-                <!-- Stats sẽ được tạo động -->
-            </div>
-            
+
+        <div class="results" id="resultsDisplaySection">
+            <div class="stats-grid" id="statsGridContent"></div>
             <div class="charts-section">
                 <div class="chart-card">
-                    <h3 class="chart-title">Top 10 Từ Khóa Hiệu Quả Nhất</h3>
-                    <canvas id="keywordChart"></canvas>
+                    <h3 class="chart-title">Top 10 Từ Khóa Hiệu Quả Nhất (ROAS)</h3>
+                    <canvas id="keywordPerformanceChartCanvas"></canvas>
+                    <div class="chart-message" id="keywordChartMessageElement" style="display:none;">Không có dữ liệu.</div>
                 </div>
                 <div class="chart-card">
                     <h3 class="chart-title">Phân Bố Chi Phí vs ROAS</h3>
-                    <canvas id="costRoasChart"></canvas>
+                    <canvas id="costRoasDistributionChartCanvas"></canvas>
+                    <div class="chart-message" id="costRoasChartMessageElement" style="display:none;">Không có dữ liệu.</div>
                 </div>
             </div>
-            
             <div class="table-section">
-                <h3 class="chart-title">Chi Tiết Hiệu Suất Từ Khóa</h3>
-                <table class="data-table" id="keywordTable">
+                <h3 class="chart-title">Chi Tiết Hiệu Suất Từ Khóa (Top 50 theo ROAS)</h3>
+                <table class="data-table" id="keywordDetailTableElement">
                     <thead>
                         <tr>
-                            <th>Từ khóa</th>
-                            <th>Lượt xem</th>
-                            <th>Lượt click</th>
-                            <th>CTR (%)</th>
-                            <th>Chuyển đổi</th>
-                            <th>CVR (%)</th>
-                            <th>Chi phí</th>
-                            <th>ROAS</th>
-                            <th>Đánh giá</th>
+                            <th>Từ khóa</th><th>Lượt xem</th><th>Click</th><th>CTR (%)</th>
+                            <th>Chuyển đổi</th><th>CVR (%)</th><th>Chi phí (VNĐ)</th>
+                            <th>GMV (VNĐ)</th><th>ROAS</th><th>Đánh giá</th>
                         </tr>
                     </thead>
-                    <tbody id="keywordTableBody">
-                    </tbody>
+                    <tbody id="keywordTableBodyContentElement"></tbody>
                 </table>
             </div>
-            
             <div class="recommendations">
                 <h3 class="chart-title">🎯 Gợi Ý Tối Ưu Hóa</h3>
-                <div id="recommendationsContent">
-                    <!-- Recommendations sẽ được tạo động -->
-                </div>
+                <div id="recommendationsListContent"></div>
             </div>
         </div>
     </div>
 
     <script>
-        let adsData = [];
+        console.log("SCRIPT START: Initializing script...");
+
+        // DOM Elements
+        const csvFileInputElement = document.getElementById('csvFileInput');
+        const fileUploadAreaContainerElement = document.getElementById('fileUploadAreaContainer');
+        const fileNameDisplayElement = document.getElementById('fileNameDisplayElement');
+        const loadingSpinnerElement = document.getElementById('loadingSpinnerElement');
+        const resultsDisplaySectionElement = document.getElementById('resultsDisplaySection');
+        const statsGridContentElement = document.getElementById('statsGridContent');
+        const keywordChartCanvasElement = document.getElementById('keywordPerformanceChartCanvas');
+        const costRoasChartCanvasElement = document.getElementById('costRoasDistributionChartCanvas');
+        const keywordChartMessageElement = document.getElementById('keywordChartMessageElement');
+        const costRoasChartMessageElement = document.getElementById('costRoasChartMessageElement');
+        const keywordTableBodyContentElement = document.getElementById('keywordTableBodyContentElement');
+        const recommendationsListContentElement = document.getElementById('recommendationsListContent');
+
+        let processedAdsDataStorage = [];
+        let keywordChartInstance = null;
+        let costRoasChartInstance = null;
+
+        function safeParseFloat(value) {
+            if (value === null || typeof value === 'undefined' || String(value).trim() === '') return 0;
+            const cleanedValue = String(value)
+                .replace(/VNĐ/gi, '')    
+                .replace(/\./g, '') // Loại bỏ dấu chấm phân cách hàng ngàn
+                .replace(/,/g, '.') // Chuyển dấu phẩy thập phân thành dấu chấm
+                .replace(/[^\d.-]/g, ''); 
+            const num = parseFloat(cleanedValue);
+            return isNaN(num) ? 0 : num;
+        }
+
+        function findCsvHeader(csvHeaders, possibleNames) {
+            for (const name of possibleNames) {
+                const foundHeader = csvHeaders.find(h => h && h.trim().toLowerCase() === name.toLowerCase());
+                if (foundHeader) return foundHeader;
+            }
+            return null;
+        }
+
+        function resetAll() {
+            console.log("RESET: Resetting UI and data...");
+            csvFileInputElement.value = null; 
+            fileNameDisplayElement.textContent = '';
+            loadingSpinnerElement.style.display = 'none';
+            resultsDisplaySectionElement.style.display = 'none';
+            statsGridContentElement.innerHTML = '';
+            keywordTableBodyContentElement.innerHTML = '';
+            recommendationsListContentElement.innerHTML = '';
+            keywordChartMessageElement.style.display = 'none';
+            costRoasChartMessageElement.style.display = 'none';
+
+            if (keywordChartInstance) keywordChartInstance.destroy();
+            if (costRoasChartInstance) costRoasChartInstance.destroy();
+            keywordChartInstance = null;
+            costRoasChartInstance = null;
+            processedAdsDataStorage = [];
+        }
         
-        function handleFileUpload(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-            
-            document.getElementById('loading').style.display = 'block';
-            
-            Papa.parse(file, {
-                header: true,
-                encoding: 'UTF-8',
-                skipEmptyLines: true,
-                dynamicTyping: true,
-                complete: function(results) {
-                    processData(results.data);
-                    document.getElementById('loading').style.display = 'none';
-                },
-                error: function(error) {
-                    alert('Lỗi đọc file: ' + error.message);
-                    document.getElementById('loading').style.display = 'none';
+        function handleFileSelectedByInput(event) {
+            console.log("HANDLE FILE: 'change' event triggered on csvFileInputElement.");
+            resetAll(); // Reset trước khi xử lý file mới
+
+            if (event.target.files && event.target.files.length > 0) {
+                const file = event.target.files[0];
+                console.log("HANDLE FILE: File selected - Name:", file.name, "Type:", file.type, "Size:", file.size);
+                
+                if (!file.type.match('csv.*') && !file.name.toLowerCase().endsWith('.csv')) {
+                    alert('Vui lòng chọn file CSV.');
+                    resetAll(); // Đảm bảo reset nếu file không hợp lệ
+                    return;
                 }
-            });
+
+                fileNameDisplayElement.textContent = `Đang xử lý: ${file.name}`;
+                loadingSpinnerElement.style.display = 'block';
+                resultsDisplaySectionElement.style.display = 'none';
+
+                if (typeof Papa === 'undefined') {
+                    alert('Lỗi: Thư viện PapaParse chưa tải xong. Vui lòng thử lại sau giây lát.');
+                    loadingSpinnerElement.style.display = 'none';
+                    resetAll();
+                    return;
+                }
+
+                console.log("HANDLE FILE: Calling Papa.parse...");
+                Papa.parse(file, {
+                    header: true,
+                    encoding: 'UTF-8',
+                    skipEmptyLines: true,
+                    delimiter: ",", // QUAN TRỌNG: Đặt delimiter ở đây. Thay đổi nếu file của bạn dùng ký tự khác (ví dụ ";")
+                    // dynamicTyping: true, // Cân nhắc sử dụng nếu tin tưởng vào kiểu dữ liệu của CSV, hoặc tự parse số như hiện tại
+                    complete: function(results) {
+                        console.log("PAPAPARSE COMPLETE: Results received.", results);
+                        loadingSpinnerElement.style.display = 'none';
+                        
+                        if (results.errors && results.errors.length > 0) {
+                            let errorMsg = 'Lỗi đọc file CSV:\n';
+                            results.errors.forEach(e => {
+                                errorMsg += `Dòng ${e.row !== undefined ? e.row + 1 : 'N/A'}: ${e.message} (${e.code})\n`;
+                            });
+                            console.error("PAPAPARSE ERROR:", errorMsg, results.errors);
+                            alert(errorMsg);
+                            resetAll();
+                            return;
+                        }
+                        if (!results.data || results.data.length === 0) {
+                            alert('File CSV rỗng hoặc không có dữ liệu sau khi parse.');
+                            resetAll();
+                            return;
+                        }
+                        processParsedCsvData(results.data, results.meta.fields || []);
+                    },
+                    error: function(error, file) {
+                        console.error('PAPAPARSE FATAL ERROR:', error);
+                        loadingSpinnerElement.style.display = 'none';
+                        alert('Lỗi nghiêm trọng khi đọc file: ' + error.message);
+                        resetAll();
+                    }
+                });
+            } else {
+                console.log("HANDLE FILE: No file selected or event.target.files is empty.");
+                // Không cần resetAll() ở đây vì có thể người dùng nhấn "Cancel"
+            }
         }
-        
-        function processData(data) {
-            // Lọc dữ liệu hợp lệ
-            adsData = data.filter(row => 
-                row['Từ khóa'] && 
-                row['Từ khóa'] !== 'Chọn Thủ Công' &&
-                row['Số lượt xem'] > 0
+
+        function processParsedCsvData(rawRows, csvHeaders) {
+            console.log("PROCESS DATA: Starting data processing. Headers found by PapaParse:", csvHeaders);
+            const headerMappings = {
+                keyword: ['Từ khóa', 'Keyword', 'Tên từ khóa', 'Search Term'],
+                impressions: ['Số lượt xem', 'Impressions', 'Lượt xem', 'Views'],
+                clicks: ['Số lượt click', 'Clicks', 'Lượt click'],
+                conversions: ['Lượt chuyển đổi', 'Conversions', 'Số đơn hàng trực tiếp', 'Đơn hàng', 'Total Orders', 'Đã bán'],
+                cost: ['Chi phí', 'Cost', 'Tổng chi phí', 'Spend', 'Amount Spent'],
+                gmv: ['GMV', 'Doanh thu trực tiếp', 'Doanh thu', 'Total Sales', 'Revenue', 'Doanh số']
+            };
+
+            const actualHeaders = {};
+            for (const key in headerMappings) {
+                actualHeaders[key] = findCsvHeader(csvHeaders, headerMappings[key]);
+                if (!actualHeaders[key]) console.warn(`PROCESS DATA: Header for '${key}' NOT FOUND using [${headerMappings[key].join(', ')}]`);
+            }
+            console.log("PROCESS DATA: Actual mapped headers to be used:", actualHeaders);
+
+            processedAdsDataStorage = rawRows.map(row => {
+                const item = {};
+                item.keyword = String(row[actualHeaders.keyword] || "N/A").trim(); // Trim keyword
+                item.impressions = safeParseFloat(row[actualHeaders.impressions]);
+                item.clicks = safeParseFloat(row[actualHeaders.clicks]);
+                item.conversions = safeParseFloat(row[actualHeaders.conversions]);
+                item.cost = safeParseFloat(row[actualHeaders.cost]);
+                item.gmv = safeParseFloat(row[actualHeaders.gmv]);
+
+                item.ctr = item.impressions > 0 ? (item.clicks / item.impressions * 100) : 0;
+                item.cvr = item.clicks > 0 ? (item.conversions / item.clicks * 100) : 0;
+                item.roas = item.cost > 0 ? (item.gmv / item.cost) : 0;
+                return item;
+            }).filter(item =>
+                item.keyword && item.keyword !== "N/A" &&
+                !['chọn thủ công', 'tổng', '[không có dữ liệu]', 'total', ''].includes(item.keyword.toLowerCase()) && // Thêm '' để loại bỏ từ khóa rỗng
+                item.impressions > 0
             );
-            
-            generateStats();
-            generateCharts();
-            generateTable();
-            generateRecommendations();
-            
-            document.getElementById('results').style.display = 'block';
+
+            console.log("PROCESS DATA: Filtered data count:", processedAdsDataStorage.length);
+            if (processedAdsDataStorage.length > 0) {
+                 console.log("PROCESS DATA: Sample of processed data (first item):", JSON.parse(JSON.stringify(processedAdsDataStorage[0])));
+            }
+
+
+            if (processedAdsDataStorage.length === 0) {
+                alert("Không tìm thấy dữ liệu quảng cáo hợp lệ nào sau khi xử lý và lọc.\n" +
+                      "Vui lòng kiểm tra file CSV của bạn có các cột cần thiết (Từ khóa, Số lượt xem,...) " +
+                      "và có ít nhất một dòng dữ liệu hợp lệ không bị lọc bỏ.");
+                resetAll(); // Reset nếu không có dữ liệu hợp lệ
+                return;
+            }
+
+            renderFullDashboard();
+            resultsDisplaySectionElement.style.display = 'block';
         }
-        
-        function generateStats() {
-            const totalImpressions = adsData.reduce((sum, row) => sum + (row['Số lượt xem'] || 0), 0);
-            const totalClicks = adsData.reduce((sum, row) => sum + (row['Số lượt click'] || 0), 0);
-            const totalConversions = adsData.reduce((sum, row) => sum + (row['Lượt chuyển đổi'] || 0), 0);
-            const totalCost = adsData.reduce((sum, row) => sum + (row['Chi phí'] || 0), 0);
-            const totalGMV = adsData.reduce((sum, row) => sum + (row['GMV'] || 0), 0);
-            
-            const avgCTR = totalImpressions > 0 ? (totalClicks / totalImpressions * 100).toFixed(2) : 0;
-            const avgCVR = totalClicks > 0 ? (totalConversions / totalClicks * 100).toFixed(2) : 0;
-            const totalROAS = totalCost > 0 ? (totalGMV / totalCost).toFixed(2) : 0;
-            
+
+        function renderFullDashboard() {
+            console.log("RENDER DASHBOARD: Starting to render full dashboard.");
+            if (typeof Chart === 'undefined') {
+                alert('Lỗi: Thư viện Chart.js chưa tải xong. Vui lòng làm mới trang và thử lại.');
+                return;
+            }
+            generateStatsDisplay();
+            generateChartsDisplay();
+            generateTableDisplay();
+            generateRecommendationsDisplay();
+        }
+
+        function generateStatsDisplay() { /* Giữ nguyên như trước */
+            console.log("RENDER STATS: Generating stats...");
+            if (processedAdsDataStorage.length === 0) {
+                statsGridContentElement.innerHTML = "<p>Không có dữ liệu để hiển thị thống kê.</p>";
+                return;
+            }
+            const totalImpressions = processedAdsDataStorage.reduce((sum, row) => sum + row.impressions, 0);
+            const totalClicks = processedAdsDataStorage.reduce((sum, row) => sum + row.clicks, 0);
+            const totalConversions = processedAdsDataStorage.reduce((sum, row) => sum + row.conversions, 0);
+            const totalCost = processedAdsDataStorage.reduce((sum, row) => sum + row.cost, 0);
+            const totalGMV = processedAdsDataStorage.reduce((sum, row) => sum + row.gmv, 0);
+
+            const avgCTR = totalImpressions > 0 ? (totalClicks / totalImpressions * 100) : 0;
+            const avgCVR = totalClicks > 0 ? (totalConversions / totalClicks * 100) : 0;
+            const totalROAS = totalCost > 0 ? (totalGMV / totalCost) : 0;
+
             const stats = [
-                { label: 'Tổng Lượt Xem', value: totalImpressions.toLocaleString() },
-                { label: 'Tổng Lượt Click', value: totalClicks.toLocaleString() },
-                { label: 'CTR Trung Bình', value: avgCTR + '%' },
-                { label: 'Tổng Chuyển Đổi', value: totalConversions },
-                { label: 'CVR Trung Bình', value: avgCVR + '%' },
-                { label: 'Tổng Chi Phí', value: (totalCost/1000).toFixed(0) + 'K VNĐ' },
-                { label: 'Tổng Doanh Thu', value: (totalGMV/1000).toFixed(0) + 'K VNĐ' },
-                { label: 'ROAS Tổng', value: totalROAS }
+                { label: 'Tổng Lượt Xem', value: totalImpressions.toLocaleString('vi-VN') },
+                { label: 'Tổng Lượt Click', value: totalClicks.toLocaleString('vi-VN') },
+                { label: 'CTR TB (%)', value: avgCTR.toFixed(2) },
+                { label: 'Tổng Chuyển Đổi', value: totalConversions.toLocaleString('vi-VN') },
+                { label: 'CVR TB (%)', value: avgCVR.toFixed(2) },
+                { label: 'Tổng Chi Phí', value: totalCost.toLocaleString('vi-VN', { style: 'currency', currency: 'VND', minimumFractionDigits: 0, maximumFractionDigits: 0 }) },
+                { label: 'Tổng Doanh Thu', value: totalGMV.toLocaleString('vi-VN', { style: 'currency', currency: 'VND', minimumFractionDigits: 0, maximumFractionDigits: 0 }) },
+                { label: 'ROAS Tổng', value: totalROAS.toFixed(2) }
             ];
-            
-            const statsGrid = document.getElementById('statsGrid');
-            statsGrid.innerHTML = stats.map(stat => `
+
+            statsGridContentElement.innerHTML = stats.map(stat => `
                 <div class="stat-card">
                     <div class="stat-value">${stat.value}</div>
                     <div class="stat-label">${stat.label}</div>
                 </div>
             `).join('');
+            console.log("RENDER STATS: Stats displayed.");
         }
-        
-        function generateCharts() {
-            // Chart 1: Top từ khóa hiệu quả
-            const topKeywords = adsData
-                .filter(row => row['ROAS'] > 0)
-                .sort((a, b) => b['ROAS'] - a['ROAS'])
+
+        function generateChartsDisplay() { /* Kích hoạt lại và kiểm tra */
+            console.log("RENDER CHARTS: Generating charts...");
+            keywordChartMessageElement.style.display = 'none';
+            costRoasChartMessageElement.style.display = 'none';
+
+            if (keywordChartInstance) keywordChartInstance.destroy();
+            if (costRoasChartInstance) costRoasChartInstance.destroy();
+
+            const topKeywords = [...processedAdsDataStorage]
+                .filter(row => row.roas > 0)
+                .sort((a, b) => b.roas - a.roas)
                 .slice(0, 10);
-            
-            const ctx1 = document.getElementById('keywordChart').getContext('2d');
-            new Chart(ctx1, {
-                type: 'bar',
-                data: {
-                    labels: topKeywords.map(row => row['Từ khóa'].substring(0, 20) + '...'),
-                    datasets: [{
-                        label: 'ROAS',
-                        data: topKeywords.map(row => row['ROAS']),
-                        backgroundColor: 'rgba(102, 126, 234, 0.8)',
-                        borderColor: 'rgba(102, 126, 234, 1)',
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    plugins: {
-                        legend: { display: false }
+
+            if (topKeywords.length > 0) {
+                keywordChartInstance = new Chart(keywordChartCanvasElement, { /* ... cấu hình biểu đồ như trước ... */ 
+                    type: 'bar',
+                    data: {
+                        labels: topKeywords.map(row => row.keyword.substring(0, 20) + (row.keyword.length > 20 ? '...' : '')),
+                        datasets: [{
+                            label: 'ROAS', data: topKeywords.map(row => row.roas.toFixed(2)),
+                            backgroundColor: 'rgba(102, 126, 234, 0.8)', borderColor: 'rgba(102, 126, 234, 1)', borderWidth: 1
+                        }]
                     },
-                    scales: {
-                        y: { beginAtZero: true }
-                    }
-                }
-            });
-            
-            // Chart 2: Chi phí vs ROAS
-            const costRoasData = adsData
-                .filter(row => row['Chi phí'] > 0 && row['ROAS'] > 0)
-                .slice(0, 20);
-            
-            const ctx2 = document.getElementById('costRoasChart').getContext('2d');
-            new Chart(ctx2, {
-                type: 'scatter',
-                data: {
-                    datasets: [{
-                        label: 'Chi phí vs ROAS',
-                        data: costRoasData.map(row => ({
-                            x: row['Chi phí'],
-                            y: row['ROAS']
-                        })),
-                        backgroundColor: 'rgba(118, 75, 162, 0.6)',
-                        borderColor: 'rgba(118, 75, 162, 1)',
-                        borderWidth: 2
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    scales: {
-                        x: { 
-                            title: { display: true, text: 'Chi phí (VNĐ)' }
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+                });
+            } else {
+                keywordChartMessageElement.style.display = 'block';
+            }
+
+            const costRoasChartData = processedAdsDataStorage
+                .filter(row => row.cost > 0 && row.roas >= 0) // Cho phép ROAS = 0
+                .sort((a,b) => b.cost - a.cost)
+                .slice(0, 30); 
+
+            if (costRoasChartData.length > 0) {
+                costRoasChartInstance = new Chart(costRoasChartCanvasElement, { /* ... cấu hình biểu đồ như trước ... */ 
+                    type: 'scatter',
+                    data: {
+                        datasets: [{
+                            label: 'Từ khóa',
+                            data: costRoasChartData.map(row => ({ x: row.cost, y: row.roas, keyword: row.keyword })),
+                            backgroundColor: 'rgba(118, 75, 162, 0.6)', borderColor: 'rgba(118, 75, 162, 1)',
+                            borderWidth: 1, pointRadius: 5, pointHoverRadius: 7
+                        }]
+                    },
+                    options: {
+                        responsive: true, maintainAspectRatio: false,
+                        plugins: {
+                            tooltip: {
+                                callbacks: {
+                                    label: ctx => `${ctx.raw.keyword} - ROAS: ${ctx.raw.y.toFixed(2)}, Chi phí: ${ctx.raw.x.toLocaleString('vi-VN')}đ`
+                                }
+                            }
                         },
-                        y: { 
-                            title: { display: true, text: 'ROAS' }
+                        scales: {
+                            x: { type: 'logarithmic', title: { display: true, text: 'Chi phí (VNĐ)' }, ticks: { callback: val => Number(val.toString()).toLocaleString('vi-VN')}},
+                            y: { title: { display: true, text: 'ROAS' }, beginAtZero: true }
                         }
                     }
-                }
-            });
+                });
+            } else {
+                costRoasChartMessageElement.style.display = 'block';
+            }
+            console.log("RENDER CHARTS: Charts displayed (or messages shown).");
         }
-        
-        function generateTable() {
-            const tableBody = document.getElementById('keywordTableBody');
-            const sortedData = adsData
-                .sort((a, b) => (b['ROAS'] || 0) - (a['ROAS'] || 0))
-                .slice(0, 20);
-            
-            tableBody.innerHTML = sortedData.map(row => {
-                const evaluation = getKeywordEvaluation(row);
+
+        function generateTableDisplay() { /* Kích hoạt lại và kiểm tra */
+            console.log("RENDER TABLE: Generating table...");
+            const sortedData = [...processedAdsDataStorage].sort((a, b) => b.roas - a.roas).slice(0, 50);
+            keywordTableBodyContentElement.innerHTML = sortedData.map(row => {
+                const evalRes = getKeywordEvaluation(row);
                 return `
                     <tr>
-                        <td>${row['Từ khóa']}</td>
-                        <td>${(row['Số lượt xem'] || 0).toLocaleString()}</td>
-                        <td>${(row['Số lượt click'] || 0).toLocaleString()}</td>
-                        <td>${(row['Tỷ Lệ Click'] || '0.00%')}</td>
-                        <td>${row['Lượt chuyển đổi'] || 0}</td>
-                        <td>${(row['Tỷ lệ chuyển đổi'] || '0.00%')}</td>
-                        <td>${((row['Chi phí'] || 0)/1000).toFixed(0)}K</td>
-                        <td>${(row['ROAS'] || 0).toFixed(2)}</td>
-                        <td style="color: ${evaluation.color}">${evaluation.text}</td>
-                    </tr>
-                `;
+                        <td>${row.keyword}</td>
+                        <td>${row.impressions.toLocaleString('vi-VN')}</td>
+                        <td>${row.clicks.toLocaleString('vi-VN')}</td>
+                        <td>${row.ctr.toFixed(2)}%</td>
+                        <td>${row.conversions.toLocaleString('vi-VN')}</td>
+                        <td>${row.cvr.toFixed(2)}%</td>
+                        <td>${row.cost.toLocaleString('vi-VN')}</td>
+                        <td>${row.gmv.toLocaleString('vi-VN')}</td>
+                        <td>${row.roas.toFixed(2)}</td>
+                        <td style="color: ${evalRes.color}; font-weight: bold;">${evalRes.text}</td>
+                    </tr>`;
             }).join('');
+            console.log("RENDER TABLE: Table displayed.");
         }
         
-        function getKeywordEvaluation(row) {
-            const roas = row['ROAS'] || 0;
-            const conversions = row['Lượt chuyển đổi'] || 0;
-            
-            if (roas > 5) return { text: '🔥 Xuất sắc', color: '#28a745' };
-            if (roas > 2) return { text: '✅ Tốt', color: '#17a2b8' };
-            if (roas > 1) return { text: '⚖️ Khả thi', color: '#ffc107' };
-            if (conversions > 0) return { text: '⚠️ Cần cải thiện', color: '#fd7e14' };
-            return { text: '❌ Kém hiệu quả', color: '#dc3545' };
+        function getKeywordEvaluation(row) { /* Giữ nguyên như trước */
+            if (row.roas > 5 && row.conversions > 0) return { text: '🔥 Xuất sắc', color: '#28a745' };
+            if (row.roas > 3 && row.conversions > 0) return { text: '✅ Rất Tốt', color: '#17a2b8' };
+            if (row.roas > 1.5 && row.conversions > 0) return { text: '👍 Tốt', color: '#007bff' };
+            if (row.roas > 1 && row.conversions > 0) return { text: 'Ổn', color: '#ffc107'};
+            if (row.conversions > 0 && row.roas <= 1 && row.roas > 0) return { text: '⚠️ Cải thiện ROAS', color: '#fd7e14' };
+            if (row.clicks > 0 && row.conversions === 0 && row.cost > 0) return { text: '💸 Tốn phí, 0 CĐ', color: '#dc3545'};
+            if (row.roas === 0 && row.cost > 0 && row.conversions === 0 && clicks > 0) return { text: '💸 Tốn phí, 0 CĐ', color: '#dc3545'}; // Bổ sung
+            if (row.roas === 0 && row.cost === 0 && row.clicks === 0 && row.impressions > 0) return { text: '❓ Không tương tác', color: '#6c757d'};
+            return { text: 'Xem xét', color: '#6c757d' };
         }
-        
-        function generateRecommendations() {
-            const recommendations = [];
+
+        function generateRecommendationsDisplay() { /* Kích hoạt lại và kiểm tra */
+            console.log("RENDER RECOMMENDATIONS: Generating recommendations...");
+            const recs = [];
+            const totalCostAll = processedAdsDataStorage.reduce((sum, r) => sum + r.cost, 0);
+            const overallROASAll = totalCostAll > 0 ? (processedAdsDataStorage.reduce((sum, r) => sum + r.gmv, 0) / totalCostAll) : 0;
+
+            const highPerformers = processedAdsDataStorage.filter(r => r.roas > 5 && r.conversions > 0).sort((a,b) => b.roas - a.roas);
+            if (highPerformers.length > 0) recs.push({ title: '🚀 Tăng cường từ khóa xuất sắc', content: `Có ${highPerformers.length} từ khóa ROAS > 5. Xem xét tăng ngân sách/giá thầu cho: ${highPerformers.slice(0,2).map(k=>`"${k.keyword}" (ROAS ${k.roas.toFixed(1)})`).join(', ')}.`});
+
+            const costNoConversion = processedAdsDataStorage.filter(r => r.cost > (totalCostAll * 0.01) && r.conversions === 0 && r.clicks > 3).sort((a,b) => b.cost - a.cost);
+            if (costNoConversion.length > 0) recs.push({ title: '🗑️ Từ khóa tốn phí, không chuyển đổi', content: `${costNoConversion.length} từ khóa chi phí >1% tổng và 0 CĐ. Cân nhắc dừng/giảm thầu: ${costNoConversion.slice(0,2).map(k=>`"${k.keyword}" (Chi phí ${k.cost.toLocaleString('vi-VN')}đ)`).join(', ')}.`});
+
+            const highCtrLowCvr = processedAdsDataStorage.filter(r => r.ctr > 3 && r.cvr < 1 && r.clicks > 10).sort((a,b) => b.clicks - a.clicks);
+            if (highCtrLowCvr.length > 0) recs.push({ title: '💡 Tối ưu CVR cho từ khóa CTR cao', content: `${highCtrLowCvr.length} từ khóa CTR >3% nhưng CVR <1%. Tối ưu trang đích/ưu đãi cho: ${highCtrLowCvr.slice(0,2).map(k=>`"${k.keyword}" (CTR ${k.ctr.toFixed(1)}%)`).join(', ')}.`});
             
-            // Phân tích từ khóa hiệu quả cao
-            const highPerformingKeywords = adsData.filter(row => row['ROAS'] > 3);
-            if (highPerformingKeywords.length > 0) {
-                recommendations.push({
-                    title: '🚀 Tăng ngân sách cho từ khóa hiệu quả cao',
-                    content: `Có ${highPerformingKeywords.length} từ khóa có ROAS > 3. Hãy tăng ngân sách cho các từ khóa: ${highPerformingKeywords.slice(0, 3).map(k => k['Từ khóa']).join(', ')}`
-                });
-            }
-            
-            // Phân tích từ khóa kém hiệu quả
-            const poorKeywords = adsData.filter(row => (row['Chi phí'] || 0) > 10000 && (row['Lượt chuyển đổi'] || 0) === 0);
-            if (poorKeywords.length > 0) {
-                recommendations.push({
-                    title: '🗑️ Loại bỏ từ khóa kém hiệu quả',
-                    content: `${poorKeywords.length} từ khóa có chi phí cao nhưng không có chuyển đổi. Cân nhắc tạm dừng hoặc giảm giá thầu.`
-                });
-            }
-            
-            // Phân tích từ khóa có tiềm năng
-            const potentialKeywords = adsData.filter(row => 
-                (row['Số lượt xem'] || 0) > 100 && 
-                (row['Tỷ Lệ Click'] || '0%').replace('%', '') > 2 && 
-                (row['Lượt chuyển đổi'] || 0) === 0
-            );
-            if (potentialKeywords.length > 0) {
-                recommendations.push({
-                    title: '💡 Tối ưu từ khóa có tiềm năng',
-                    content: `${potentialKeywords.length} từ khóa có lượt xem và CTR tốt nhưng chưa có chuyển đổi. Hãy tối ưu trang sản phẩm hoặc điều chỉnh giá thầu.`
-                });
-            }
-            
-            // Tổng hợp chi phí
-            const totalCost = adsData.reduce((sum, row) => sum + (row['Chi phí'] || 0), 0);
-            const totalGMV = adsData.reduce((sum, row) => sum + (row['GMV'] || 0), 0);
-            const overallROAS = totalCost > 0 ? totalGMV / totalCost : 0;
-            
-            if (overallROAS < 2) {
-                recommendations.push({
-                    title: '⚠️ Cải thiện ROAS tổng thể',
-                    content: `ROAS tổng thể hiện tại là ${overallROAS.toFixed(2)}. Khuyến nghị tập trung vào các từ khóa có ROAS > 2 và cắt giảm ngân sách cho từ khóa kém hiệu quả.`
-                });
-            }
-            
-            const recommendationsContent = document.getElementById('recommendationsContent');
-            recommendationsContent.innerHTML = recommendations.map(rec => `
-                <div class="recommendation-item">
-                    <h4>${rec.title}</h4>
-                    <p>${rec.content}</p>
-                </div>
-            `).join('');
+            if (overallROASAll < 1.5 && totalCostAll > 0) recs.push({ title: `⚠️ ROAS tổng thể thấp (${overallROASAll.toFixed(2)})`, content: `ROAS tổng thể cần cải thiện. Tập trung vào các từ khóa hiệu quả, tối ưu chuyển đổi.` });
+            else if (recs.length === 0 && processedAdsDataStorage.length > 0) recs.push({title: '📊 Dữ liệu ổn định', content: 'Hiện không có gợi ý nổi bật. Tiếp tục theo dõi sát sao.'});
+            else if (processedAdsDataStorage.length === 0) recs.push({title: 'ℹ️ Thông tin', content: 'Không có dữ liệu để đưa ra gợi ý.'});
+
+
+            recommendationsListContentElement.innerHTML = recs.map(rec => `<div class="recommendation-item"><h4>${rec.title}</h4><p>${rec.content}</p></div>`).join('');
+            console.log("RENDER RECOMMENDATIONS: Recommendations displayed.");
         }
-        
-        // Drag and drop functionality
-        const fileUpload = document.querySelector('.file-upload');
-        
-        fileUpload.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            fileUpload.style.backgroundColor = '#f0f2ff';
-        });
-        
-        fileUpload.addEventListener('dragleave', (e) => {
-            e.preventDefault();
-            fileUpload.style.backgroundColor = '#f8f9ff';
-        });
-        
-        fileUpload.addEventListener('drop', (e) => {
-            e.preventDefault();
-            fileUpload.style.backgroundColor = '#f8f9ff';
-            
-            const files = e.dataTransfer.files;
-            if (files.length > 0) {
-                document.getElementById('fileInput').files = files;
-                handleFileUpload({ target: { files: files } });
+
+        // --- Event Listeners ---
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log("DOM READY: DOMContentLoaded event fired.");
+            resetAll(); 
+
+            if (!csvFileInputElement || !fileUploadAreaContainerElement) {
+                console.error("DOM READY ERROR: Critical UI elements for file upload are missing!");
+                alert("Lỗi nghiêm trọng: Không tìm thấy thành phần giao diện tải file. Trang không thể hoạt động.");
+                return;
             }
+            
+            csvFileInputElement.addEventListener('change', handleFileSelectedByInput);
+            console.log("DOM READY: 'change' listener attached to csvFileInputElement.");
+
+            fileUploadAreaContainerElement.addEventListener('click', () => {
+                console.log("UPLOAD AREA CLICKED: Triggering click on csvFileInputElement.");
+                csvFileInputElement.click();
+            });
+            console.log("DOM READY: 'click' listener attached to fileUploadAreaContainerElement.");
+            
+            // Drag & Drop (giữ lại nhưng đảm bảo không gây lỗi nếu không dùng)
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                fileUploadAreaContainerElement.addEventListener(eventName, e => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                }, false);
+            });
+            ['dragenter', 'dragover'].forEach(eventName => {
+                fileUploadAreaContainerElement.addEventListener(eventName, () => fileUploadAreaContainerElement.classList.add('dragover'), false);
+            });
+            ['dragleave', 'drop'].forEach(eventName => {
+                fileUploadAreaContainerElement.addEventListener(eventName, () => fileUploadAreaContainerElement.classList.remove('dragover'), false);
+            });
+            fileUploadAreaContainerElement.addEventListener('drop', (e) => {
+                console.log("FILE DROPPED: Handling drop event.");
+                resetAll(); 
+                if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                    // Gán file vào input để sự kiện 'change' được kích hoạt (nếu muốn), hoặc xử lý trực tiếp
+                    // csvFileInputElement.files = e.dataTransfer.files; // Điều này có thể không kích hoạt 'change' một cách nhất quán
+                    // handleFileSelectedByInput({target: {files: e.dataTransfer.files}}); // Cách này tốt hơn
+                    
+                    // Đơn giản nhất là gọi trực tiếp hàm xử lý file
+                    const droppedFile = e.dataTransfer.files[0];
+                    console.log("FILE DROPPED: File obtained from drop - Name:", droppedFile.name);
+                     // Tạo một "event" giả để handleFileSelectedByInput có thể dùng
+                    handleFileSelectedByInput({ target: { files: e.dataTransfer.files } });
+
+                } else {
+                    console.log("FILE DROPPED: No file found in drop event dataTransfer.");
+                }
+            }, false);
+            console.log("DOM READY: Drag & Drop listeners attached.");
+
         });
+
+        console.log("SCRIPT END: Script execution finished.");
     </script>
 </body>
 </html>
