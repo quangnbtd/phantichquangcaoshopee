@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shopee Ads Analytics Dashboard v2</title>
+    <!-- Đặt Chart.js và PapaParse ở đây để đảm bảo chúng được tải trước khi script chính chạy -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+            font-size: 16px;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            color: white;
+        }
+
+        .header h1 {
+            font-size: 2.2em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+         .header p {
+            font-size: 1.1em;
+        }
+
+        .upload-section {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .file-upload-area { /* Đổi tên class để tránh nhầm lẫn */
+            border: 3px dashed #667eea;
+            border-radius: 15px;
+            padding: 40px;
+            background: #f8f9ff;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .file-upload-area.dragover { /* Class khi kéo file vào */
+            border-color: #764ba2;
+            background: #e0e3ff;
+        }
+
+        .file-upload-area input[type="file"] {
+            display: none;
+        }
+
+        .upload-icon {
+            font-size: 3em;
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+        .upload-section h3 { margin-bottom: 5px; font-size: 1.4em; }
+        .upload-section p { color: #555; }
+
+
+        .results { display: none; }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .stat-card {
+            background: white; padding: 20px; border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08); text-align: center;
+            transition: transform 0.3s ease;
+        }
+        .stat-card:hover { transform: translateY(-5px); }
+        .stat-value {
+            font-size: 2em; font-weight: bold; margin-bottom: 8px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            background-clip: text; word-wrap: break-word;
+        }
+        .stat-label { color: #666; font-size: 1em; }
+
+        .charts-section {
+            display: grid; grid-template-columns: 1fr 1fr;
+            gap: 30px; margin-bottom: 30px;
+        }
+        .chart-card {
+            background: white; padding: 25px; border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08); position: relative;
+            min-height: 350px; /* Đảm bảo chiều cao tối thiểu cho biểu đồ */
+        }
+        .chart-message {
+            position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%, -50%); text-align: center;
+            color: #888; font-style: italic;
+        }
+        .chart-title {
+            font-size: 1.2em; margin-bottom: 20px; color: #333; text-align: center;
+        }
+
+        .table-section {
+            background: white; border-radius: 15px; padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08); overflow-x: auto;
+        }
+        .data-table { width: 100%; border-collapse: collapse; font-size: 0.9em; }
+        .data-table th, .data-table td {
+            padding: 10px 8px; text-align: left; border-bottom: 1px solid #eee;
+        }
+        .data-table th {
+            background: linear-gradient(45deg, #667eea, #764ba2); color: white;
+            font-weight: 600; position: sticky; top: 0;
+        }
+        .data-table tr:hover { background: #f8f9ff; }
+
+        .recommendations {
+            background: white; border-radius: 15px; padding: 25px;
+            margin-top: 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+        }
+        .recommendation-item {
+            background: #f8f9ff; padding: 15px; border-radius: 10px;
+            margin-bottom: 15px; border-left: 4px solid #667eea;
+        }
+         .recommendation-item h4 { margin-bottom: 5px; font-size: 1.1em;}
+
+        .loading {
+            display: none; text-align: center; padding: 40px; color: white;
+        }
+        .spinner {
+            border: 4px solid #f3f3f3; border-top: 4px solid #667eea;
+            border-radius: 50%; width: 50px; height: 50px;
+            animation: spin 1s linear infinite; margin: 0 auto 20px;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        @media (max-width: 992px) {
+            .charts-section { grid-template-columns: 1fr; }
+        }
+        @media (max-width: 768px) {
+            .header h1 { font-size: 1.8em; }
+            .stat-value { font-size: 1.8em; }
+            .stat-label { font-size: 0.9em; }
+            .container { margin: 10px; padding: 15px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 Shopee Ads Analytics Dashboard</h1>
+            <p>Phân tích dữ liệu quảng cáo Shopee một cách thông minh và trực quan</p>
+        </div>
+
+        <div class="upload-section">
+            <div class="file-upload-area" id="fileUploadArea">
+                <input type="file" id="fileInput" accept=".csv">
+                <div class="upload-icon">📁</div>
+                <h3>Tải lên file CSV dữ liệu quảng cáo Shopee</h3>
+                <p>Chọn file hoặc kéo thả file vào đây</p>
+            </div>
+            <p id="fileNameDisplay" style="margin-top: 10px; color: #555; min-height: 1.2em;"></p>
+        </div>
+
+        <div class="loading" id="loadingSpinner">
+            <div class="spinner"></div>
+            <p>Đang phân tích dữ liệu...</p>
+        </div>
+
+        <div class="results" id="resultsSection">
+            <div class="stats-grid" id="statsGridContainer"></div>
+            <div class="charts-section">
+                <div class="chart-card">
+                    <h3 class="chart-title">Top 10 Từ Khóa Hiệu Quả Nhất (ROAS)</h3>
+                    <canvas id="keywordPerformanceChart"></canvas>
+                    <div class="chart-message" id="keywordChartMsg" style="display:none;">Không có dữ liệu.</div>
+                </div>
+                <div class="chart-card">
+                    <h3 class="chart-title">Phân Bố Chi Phí vs ROAS</h3>
+                    <canvas id="costRoasDistributionChart"></canvas>
+                    <div class="chart-message" id="costRoasChartMsg" style="display:none;">Không có dữ liệu.</div>
+                </div>
+            </div>
+            <div class="table-section">
+                <h3 class="chart-title">Chi Tiết Hiệu Suất Từ Khóa (Top 50 theo ROAS)</h3>
+                <table class="data-table" id="keywordDetailTable">
+                    <thead>
+                        <tr>
+                            <th>Từ khóa</th><th>Lượt xem</th><th>Click</th><th>CTR (%)</th>
+                            <th>Chuyển đổi</th><th>CVR (%)</th><th>Chi phí (VNĐ)</th>
+                            <th>GMV (VNĐ)</th><th>ROAS</th><th>Đánh giá</th>
+                        </tr>
+                    </thead>
+                    <tbody id="keywordTableBodyContent"></tbody>
+                </table>
+            </div>
+            <div class="recommendations">
+                <h3 class="chart-title">🎯 Gợi Ý Tối Ưu Hóa</h3>
+                <div id="recommendationsList"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // DOM Elements
+        const fileInput = document.getElementById('fileInput');
+        const fileUploadArea = document.getElementById('fileUploadArea');
+        const fileNameDisplay = document.getElementById('fileNameDisplay');
+        const loadingSpinner = document.getElementById('loadingSpinner');
+        const resultsSection = document.getElementById('resultsSection');
+        const statsGridContainer = document.getElementById('statsGridContainer');
+        const keywordChartCanvas = document.getElementById('keywordPerformanceChart');
+        const costRoasChartCanvas = document.getElementById('costRoasDistributionChart');
+        const keywordChartMsg = document.getElementById('keywordChartMsg');
+        const costRoasChartMsg = document.getElementById('costRoasChartMsg');
+        const keywordTableBodyContent = document.getElementById('keywordTableBodyContent');
+        const recommendationsList = document.getElementById('recommendationsList');
+
+        let processedAdsData = [];
+        let keywordChartInstance = null;
+        let costRoasChartInstance = null;
+
+        // Utility to safely parse float, handling various formats
+        function safeParseFloat(value) {
+            if (value === null || typeof value === 'undefined' || String(value).trim() === '') return 0;
+            const cleanedValue = String(value)
+                .replace(/VNĐ/gi, '')    // Remove currency symbols
+                .replace(/,/g, '.')       // Replace comma with dot for thousands (assuming dot is decimal separator)
+                                          // If comma is decimal separator, this needs adjustment or PapaParse config
+                .replace(/[^\d.-]/g, ''); // Remove any other non-numeric characters except dot and minus
+            const num = parseFloat(cleanedValue);
+            return isNaN(num) ? 0 : num;
+        }
+         // Utility to find header, case-insensitive and trim whitespace
+        function findCsvHeader(csvHeaders, possibleNames) {
+            for (const name of possibleNames) {
+                const foundHeader = csvHeaders.find(h => h && h.trim().toLowerCase() === name.toLowerCase());
+                if (foundHeader) return foundHeader;
+            }
+            return null;
+        }
+
+        function resetFileInput() {
+            fileInput.value = null; // Important for allowing re-selection of the same file
+            fileNameDisplay.textContent = '';
+        }
+
+        function displayLoading(show) {
+            loadingSpinner.style.display = show ? 'block' : 'none';
+            if (show) resultsSection.style.display = 'none';
+        }
+
+        function resetUI() {
+            if (keywordChartInstance) keywordChartInstance.destroy();
+            if (costRoasChartInstance) costRoasChartInstance.destroy();
+            keywordChartInstance = null;
+            costRoasChartInstance = null;
+            statsGridContainer.innerHTML = '';
+            keywordTableBodyContent.innerHTML = '';
+            recommendationsList.innerHTML = '';
+            keywordChartMsg.style.display = 'none';
+            costRoasChartMsg.style.display = 'none';
+            resultsSection.style.display = 'none';
+            resetFileInput();
+        }
+
+
+        function handleFileSelect(file) {
+            if (!file) {
+                console.warn("No file provided to handleFileSelect");
+                resetFileInput();
+                return;
+            }
+            if (!file.type.match('csv.*') && !file.name.toLowerCase().endsWith('.csv')) {
+                alert('Vui lòng chọn file CSV.');
+                resetFileInput();
+                return;
+            }
+
+            fileNameDisplay.textContent = `Đang xử lý: ${file.name}`;
+            displayLoading(true);
+
+            if (typeof Papa === 'undefined') {
+                alert('Lỗi: Thư viện PapaParse chưa tải xong. Vui lòng thử lại sau giây lát.');
+                displayLoading(false);
+                resetFileInput();
+                return;
+            }
+
+            Papa.parse(file, {
+                header: true,
+                encoding: 'UTF-8',
+                skipEmptyLines: true,
+                complete: function(results) {
+                    displayLoading(false);
+                    // console.log("PapaParse raw results:", results); // DEBUG
+                    if (results.errors && results.errors.length > 0) {
+                        console.error("PapaParse errors:", results.errors);
+                        alert('Lỗi đọc file CSV:\n' + results.errors.map(e => `Dòng ${e.row}: ${e.message} (${e.code})`).join('\n'));
+                        resetFileInput();
+                        return;
+                    }
+                    if (!results.data || results.data.length === 0) {
+                        alert('File CSV rỗng hoặc không có dữ liệu.');
+                        resetFileInput();
+                        return;
+                    }
+                    processParsedData(results.data, results.meta.fields || []);
+                },
+                error: function(error, file) {
+                    displayLoading(false);
+                    console.error('Lỗi PapaParse tổng thể:', error);
+                    alert('Lỗi nghiêm trọng khi đọc file: ' + error.message);
+                    resetFileInput();
+                }
+            });
+        }
+
+        function processParsedData(rawRows, csvHeaders) {
+            // console.log("CSV Headers found by PapaParse:", csvHeaders); // DEBUG
+            const headerMappings = {
+                keyword: ['Từ khóa', 'Keyword', 'Tên từ khóa', 'Search Term'],
+                impressions: ['Số lượt xem', 'Impressions', 'Lượt xem'],
+                clicks: ['Số lượt click', 'Clicks', 'Lượt click'],
+                ctrString: ['Tỷ Lệ Click', 'CTR'],
+                conversions: ['Lượt chuyển đổi', 'Conversions', 'Số đơn hàng trực tiếp', 'Đơn hàng', 'Total Orders'],
+                cvrString: ['Tỷ lệ chuyển đổi', 'CVR', 'Conversion Rate'],
+                cost: ['Chi phí', 'Cost', 'Tổng chi phí', 'Spend'],
+                gmv: ['GMV', 'Doanh thu trực tiếp', 'Doanh thu', 'Total Sales'],
+                roasString: ['ROAS']
+            };
+
+            const actualHeaders = {};
+            for (const key in headerMappings) {
+                actualHeaders[key] = findCsvHeader(csvHeaders, headerMappings[key]);
+                 // if (!actualHeaders[key]) console.warn(`Header for '${key}' not found using [${headerMappings[key].join(', ')}]`); // DEBUG
+            }
+            // console.log("Actual mapped headers:", actualHeaders); // DEBUG
+
+
+            processedAdsData = rawRows.map(row => {
+                const item = {};
+                item.keyword = row[actualHeaders.keyword] || "N/A";
+                item.impressions = safeParseFloat(row[actualHeaders.impressions]);
+                item.clicks = safeParseFloat(row[actualHeaders.clicks]);
+                item.conversions = safeParseFloat(row[actualHeaders.conversions]);
+                item.cost = safeParseFloat(row[actualHeaders.cost]);
+                item.gmv = safeParseFloat(row[actualHeaders.gmv]);
+
+                let ctrFromCsv = actualHeaders.ctrString ? safeParseFloat(String(row[actualHeaders.ctrString]).replace('%', '')) : NaN;
+                item.ctr = !isNaN(ctrFromCsv) && isFinite(ctrFromCsv) ? ctrFromCsv : (item.impressions > 0 ? (item.clicks / item.impressions * 100) : 0);
+
+                let cvrFromCsv = actualHeaders.cvrString ? safeParseFloat(String(row[actualHeaders.cvrString]).replace('%', '')) : NaN;
+                item.cvr = !isNaN(cvrFromCsv) && isFinite(cvrFromCsv) ? cvrFromCsv : (item.clicks > 0 ? (item.conversions / item.clicks * 100) : 0);
+
+                let roasFromCsv = actualHeaders.roasString ? safeParseFloat(row[actualHeaders.roasString]) : NaN;
+                item.roas = !isNaN(roasFromCsv) && isFinite(roasFromCsv) ? roasFromCsv : (item.cost > 0 ? (item.gmv / item.cost) : 0);
+
+                return item;
+            }).filter(item =>
+                item.keyword && item.keyword !== "N/A" &&
+                !['chọn thủ công', 'tổng', '[không có dữ liệu]', 'total'].includes(item.keyword.toLowerCase().trim()) &&
+                item.impressions > 0
+            );
+
+            // console.log("Processed adsData sample (first 3):", processedAdsData.slice(0, 3)); // DEBUG
+
+            if (processedAdsData.length === 0) {
+                alert("Không tìm thấy dữ liệu quảng cáo hợp lệ nào sau khi xử lý.\n" +
+                      "Vui lòng kiểm tra file CSV của bạn có các cột cần thiết (Từ khóa, Số lượt xem,...) " +
+                      "và có ít nhất một dòng dữ liệu hợp lệ.");
+                resetFileInput();
+                resultsSection.style.display = 'none';
+                return;
+            }
+
+            renderDashboard();
+            resultsSection.style.display = 'block';
+        }
+
+        function renderDashboard() {
+            if (typeof Chart === 'undefined') {
+                alert('Lỗi: Thư viện Chart.js chưa tải xong. Vui lòng thử lại sau giây lát.');
+                return;
+            }
+            generateStats();
+            generateCharts();
+            generateTable();
+            generateRecommendations();
+        }
+
+
+        function generateStats() {
+            const totalImpressions = processedAdsData.reduce((sum, row) => sum + row.impressions, 0);
+            const totalClicks = processedAdsData.reduce((sum, row) => sum + row.clicks, 0);
+            const totalConversions = processedAdsData.reduce((sum, row) => sum + row.conversions, 0);
+            const totalCost = processedAdsData.reduce((sum, row) => sum + row.cost, 0);
+            const totalGMV = processedAdsData.reduce((sum, row) => sum + row.gmv, 0);
+
+            const avgCTR = totalImpressions > 0 ? (totalClicks / totalImpressions * 100) : 0;
+            const avgCVR = totalClicks > 0 ? (totalConversions / totalClicks * 100) : 0;
+            const totalROAS = totalCost > 0 ? (totalGMV / totalCost) : 0;
+
+            const stats = [
+                { label: 'Tổng Lượt Xem', value: totalImpressions.toLocaleString('vi-VN') },
+                { label: 'Tổng Lượt Click', value: totalClicks.toLocaleString('vi-VN') },
+                { label: 'CTR TB (%)', value: avgCTR.toFixed(2) },
+                { label: 'Tổng Chuyển Đổi', value: totalConversions.toLocaleString('vi-VN') },
+                { label: 'CVR TB (%)', value: avgCVR.toFixed(2) },
+                { label: 'Tổng Chi Phí', value: totalCost.toLocaleString('vi-VN', { style: 'currency', currency: 'VND', minimumFractionDigits: 0, maximumFractionDigits: 0 }) },
+                { label: 'Tổng Doanh Thu', value: totalGMV.toLocaleString('vi-VN', { style: 'currency', currency: 'VND', minimumFractionDigits: 0, maximumFractionDigits: 0 }) },
+                { label: 'ROAS Tổng', value: totalROAS.toFixed(2) }
+            ];
+
+            statsGridContainer.innerHTML = stats.map(stat => `
+                <div class="stat-card">
+                    <div class="stat-value">${stat.value}</div>
+                    <div class="stat-label">${stat.label}</div>
+                </div>
+            `).join('');
+        }
+
+        function generateCharts() {
+            // Destroy old charts if they exist
+            if (keywordChartInstance) keywordChartInstance.destroy();
+            if (costRoasChartInstance) costRoasChartInstance.destroy();
+            keywordChartMsg.style.display = 'none';
+            costRoasChartMsg.style.display = 'none';
+
+
+            // Chart 1: Top keywords by ROAS
+            const topKeywords = [...processedAdsData]
+                .filter(row => row.roas > 0)
+                .sort((a, b) => b.roas - a.roas)
+                .slice(0, 10);
+
+            if (topKeywords.length > 0) {
+                keywordChartInstance = new Chart(keywordChartCanvas, {
+                    type: 'bar',
+                    data: {
+                        labels: topKeywords.map(row => row.keyword.substring(0, 20) + (row.keyword.length > 20 ? '...' : '')),
+                        datasets: [{
+                            label: 'ROAS', data: topKeywords.map(row => row.roas.toFixed(2)),
+                            backgroundColor: 'rgba(102, 126, 234, 0.8)', borderColor: 'rgba(102, 126, 234, 1)', borderWidth: 1
+                        }]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+                });
+            } else {
+                keywordChartMsg.style.display = 'block';
+            }
+
+            // Chart 2: Cost vs ROAS scatter plot
+            const costRoasChartData = processedAdsData
+                .filter(row => row.cost > 0 && row.roas > 0)
+                .sort((a,b) => b.cost - a.cost)
+                .slice(0, 30); // Limit points for clarity
+
+            if (costRoasChartData.length > 0) {
+                costRoasChartInstance = new Chart(costRoasChartCanvas, {
+                    type: 'scatter',
+                    data: {
+                        datasets: [{
+                            label: 'Từ khóa',
+                            data: costRoasChartData.map(row => ({ x: row.cost, y: row.roas, keyword: row.keyword })),
+                            backgroundColor: 'rgba(118, 75, 162, 0.6)', borderColor: 'rgba(118, 75, 162, 1)',
+                            borderWidth: 1, pointRadius: 5, pointHoverRadius: 7
+                        }]
+                    },
+                    options: {
+                        responsive: true, maintainAspectRatio: false,
+                        plugins: {
+                            tooltip: {
+                                callbacks: {
+                                    label: ctx => `${ctx.raw.keyword} - ROAS: ${ctx.raw.y.toFixed(2)}, Chi phí: ${ctx.raw.x.toLocaleString('vi-VN')}đ`
+                                }
+                            }
+                        },
+                        scales: {
+                            x: { type: 'logarithmic', title: { display: true, text: 'Chi phí (VNĐ)' }, ticks: { callback: val => Number(val.toString()).toLocaleString('vi-VN')}},
+                            y: { title: { display: true, text: 'ROAS' }, beginAtZero: true }
+                        }
+                    }
+                });
+            } else {
+                costRoasChartMsg.style.display = 'block';
+            }
+        }
+
+        function generateTable() {
+            const sortedData = [...processedAdsData].sort((a, b) => b.roas - a.roas).slice(0, 50);
+            keywordTableBodyContent.innerHTML = sortedData.map(row => {
+                const evalRes = getKeywordEvaluation(row);
+                return `
+                    <tr>
+                        <td>${row.keyword}</td>
+                        <td>${row.impressions.toLocaleString('vi-VN')}</td>
+                        <td>${row.clicks.toLocaleString('vi-VN')}</td>
+                        <td>${row.ctr.toFixed(2)}%</td>
+                        <td>${row.conversions.toLocaleString('vi-VN')}</td>
+                        <td>${row.cvr.toFixed(2)}%</td>
+                        <td>${row.cost.toLocaleString('vi-VN')}</td>
+                        <td>${row.gmv.toLocaleString('vi-VN')}</td>
+                        <td>${row.roas.toFixed(2)}</td>
+                        <td style="color: ${evalRes.color}; font-weight: bold;">${evalRes.text}</td>
+                    </tr>`;
+            }).join('');
+        }
+
+        function getKeywordEvaluation(row) {
+            if (row.roas > 5 && row.conversions > 0) return { text: '🔥 Xuất sắc', color: '#28a745' };
+            if (row.roas > 3 && row.conversions > 0) return { text: '✅ Rất Tốt', color: '#17a2b8' };
+            if (row.roas > 1.5 && row.conversions > 0) return { text: '👍 Tốt', color: '#007bff' };
+            if (row.roas > 1 && row.conversions > 0) return { text: 'Ổn', color: '#ffc107'};
+            if (row.conversions > 0 && row.roas <= 1) return { text: '⚠️ Cải thiện ROAS', color: '#fd7e14' };
+            if (row.clicks > 0 && row.conversions === 0 && row.cost > 0) return { text: '💸 Tốn phí, 0 CĐ', color: '#dc3545'};
+            return { text: '❓ Xem xét', color: '#6c757d' };
+        }
+
+        function generateRecommendations() {
+            const recs = [];
+            const totalCostAll = processedAdsData.reduce((sum, r) => sum + r.cost, 0);
+            const overallROASAll = totalCostAll > 0 ? (processedAdsData.reduce((sum, r) => sum + r.gmv, 0) / totalCostAll) : 0;
+
+            const highPerformers = processedAdsData.filter(r => r.roas > 5 && r.conversions > 0).sort((a,b) => b.roas - a.roas);
+            if (highPerformers.length > 0) recs.push({ title: '🚀 Tăng cường từ khóa xuất sắc', content: `Có ${highPerformers.length} từ khóa ROAS > 5. Xem xét tăng ngân sách/giá thầu cho: ${highPerformers.slice(0,2).map(k=>`"${k.keyword}" (ROAS ${k.roas.toFixed(1)})`).join(', ')}.`});
+
+            const costNoConversion = processedAdsData.filter(r => r.cost > (totalCostAll * 0.01) && r.conversions === 0 && r.clicks > 3).sort((a,b) => b.cost - a.cost);
+            if (costNoConversion.length > 0) recs.push({ title: '🗑️ Từ khóa tốn phí, không chuyển đổi', content: `${costNoConversion.length} từ khóa chi phí >1% tổng và 0 CĐ. Cân nhắc dừng/giảm thầu: ${costNoConversion.slice(0,2).map(k=>`"${k.keyword}" (Chi phí ${k.cost.toLocaleString('vi-VN')}đ)`).join(', ')}.`});
+
+            const highCtrLowCvr = processedAdsData.filter(r => r.ctr > 3 && r.cvr < 1 && r.clicks > 10).sort((a,b) => b.clicks - a.clicks);
+            if (highCtrLowCvr.length > 0) recs.push({ title: '💡 Tối ưu CVR cho từ khóa CTR cao', content: `${highCtrLowCvr.length} từ khóa CTR >3% nhưng CVR <1%. Tối ưu trang đích/ưu đãi cho: ${highCtrLowCvr.slice(0,2).map(k=>`"${k.keyword}" (CTR ${k.ctr.toFixed(1)}%)`).join(', ')}.`});
+            
+            if (overallROASAll < 1.5 && totalCostAll > 0) recs.push({ title: `⚠️ ROAS tổng thể thấp (${overallROASAll.toFixed(2)})`, content: `ROAS tổng thể cần cải thiện. Tập trung vào các từ khóa hiệu quả, tối ưu chuyển đổi.` });
+            else if (recs.length === 0) recs.push({title: '📊 Dữ liệu ổn định', content: 'Hiện không có gợi ý nổi bật. Tiếp tục theo dõi sát sao.'});
+
+            recommendationsList.innerHTML = recs.map(rec => `<div class="recommendation-item"><h4>${rec.title}</h4><p>${rec.content}</p></div>`).join('');
+        }
+
+        // Event Listeners
+        fileUploadArea.addEventListener('click', () => {
+            // console.log("Upload area clicked, triggering fileInput.click()"); // DEBUG
+            fileInput.click();
+        });
+
+        fileInput.addEventListener('change', (event) => {
+            // console.log("File input changed:", event.target.files); // DEBUG
+            if (event.target.files && event.target.files.length > 0) {
+                resetUI(); // Reset UI before processing new file
+                handleFileSelect(event.target.files[0]);
+            } else {
+                 console.log("No file selected from input dialog."); // DEBUG
+                 resetFileInput(); // Ensure display is cleared if user cancels
+            }
+        });
+
+        // Drag and Drop
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            fileUploadArea.addEventListener(eventName, e => {
+                e.preventDefault();
+                e.stopPropagation();
+            }, false);
+        });
+        ['dragenter', 'dragover'].forEach(eventName => {
+            fileUploadArea.addEventListener(eventName, () => fileUploadArea.classList.add('dragover'), false);
+        });
+        ['dragleave', 'drop'].forEach(eventName => {
+            fileUploadArea.addEventListener(eventName, () => fileUploadArea.classList.remove('dragover'), false);
+        });
+        fileUploadArea.addEventListener('drop', (e) => {
+            // console.log("File dropped"); // DEBUG
+            if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                resetUI();
+                handleFileSelect(e.dataTransfer.files[0]);
+                // e.dataTransfer.clearData(); // Optional: clear data transfer object
+            } else {
+                console.log("No file found in drop event."); // DEBUG
+            }
+        });
+
+        // Initial check for libraries (optional, good practice)
+        document.addEventListener('DOMContentLoaded', () => {
+            if (typeof Papa === 'undefined' || typeof Chart === 'undefined') {
+                console.warn("Một hoặc cả hai thư viện PapaParse/Chart.js chưa sẵn sàng khi DOMContentLoaded.");
+                // You could display a persistent warning or disable upload until they are loaded
+                // For this example, we assume they load quickly from CDN.
+            } else {
+                console.log("PapaParse and Chart.js are ready."); // DEBUG
+            }
+            resetUI(); // Ensure a clean state on load/reload
+        });
+
+    </script>
+</body>
+</html>
